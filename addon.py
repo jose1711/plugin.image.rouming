@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # plugin for viewing pics on rouming.cz on kodi. browsing archive
 # is currently not supported
 
@@ -8,6 +9,7 @@ import xbmcgui
 import xbmcaddon
 import xbmcplugin
 import util
+from HTMLParser import HTMLParser
 
 g_AddonHandle = int(sys.argv[1])
 g_AddonPath = xbmcaddon.Addon().getAddonInfo('path')
@@ -37,6 +39,7 @@ def toggle(path):
 
 # main()
 base_url = 'http://www.rouming.cz'
+hp = HTMLParser()
 intervals = ('today', 'week', 'month')
 if len(sys.argv) > 2:
     mode = sys.argv[2][1:]
@@ -46,6 +49,7 @@ else:
 print('Current mode: %s' % mode)
 
 if not mode:
+    add_dir('[COLOR red]GIFník[/COLOR]', '%s?%s' % (g_Args_URL, 'gifs1'))
     add_dir('[COLOR yellow]Best of today[/COLOR]', '%s?%s' % (g_Args_URL, 'today'))
     add_dir('[COLOR yellow]Best of week[/COLOR]', '%s?%s' % (g_Args_URL, 'week'))
     add_dir('[COLOR yellow]Best of month[/COLOR]', '%s?%s' % (g_Args_URL, 'month'))
@@ -72,6 +76,40 @@ if mode in intervals:
                                                                          jpg),
                                     listitem=li,
                                     isFolder=False)
+    xbmcplugin.endOfDirectory(g_AddonHandle)
+elif 'gifs' in mode:
+    page = int(mode.replace('gifs', ''))
+    data = util.post(base_url + '/roumingGIFList.php',
+                     {'page': page,
+                      'submited': 1})
+    print(page)
+    data = util.substr(data, 'tbody', '</body>')
+    urls = re.findall(r'<source src="([^"]+\.webm)"', data)
+    titles = re.findall(r'<video .+?title="([^"]*)"', data)
+    for title, url in zip(titles, urls):
+        title = hp.unescape(title)
+        print(title, url)
+        li = xbmcgui.ListItem(title)
+        li.setInfo(type="video", infoLabels={})
+        xbmcplugin.addDirectoryItem(handle=g_AddonHandle,
+                                    url=url,
+                                    listitem=li,
+                                    isFolder=False)
+    li = xbmcgui.ListItem('>> Next page')
+    xbmcplugin.addDirectoryItem(handle=g_AddonHandle,
+                                url='%s?%s%s' % (g_Args_URL,
+                                                 'gifs',
+                                                 page+1),
+                                listitem=li,
+                                isFolder=True)
+    if page > 1:
+        li = xbmcgui.ListItem('<< Previous page')
+        xbmcplugin.addDirectoryItem(handle=g_AddonHandle,
+                                    url='%s?%s%s' % (g_Args_URL,
+                                                     'gifs',
+                                                     page-1),
+                                    listitem=li,
+                                    isFolder=True)
     xbmcplugin.endOfDirectory(g_AddonHandle)
 else:
     data = util.parse_html(base_url)
