@@ -84,11 +84,19 @@ elif 'gifs' in mode:
                       'submited': 1})
     print(page)
     data = util.substr(data, 'tbody', '</body>')
-    urls = re.findall(r'<source src="([^"]+\.webm)"', data)
-    titles = re.findall(r'<video .+?title="([^"]*)"', data)
+    urls = re.findall(r'(?:<source src="([^"]+\.(?:webm|mp4))".*?</video>|img src=\'([^  \']+)\')',
+                      data,
+                      re.S)
+    urls = [''.join(x) for x in urls]
+    titles = re.findall(r'(?:<video .+?title="([^"]*)")|(?:alt=\'([^\']+)\')',
+                        data)
+    print(urls, titles)
+    titles = [''.join(x) for x in titles]
     for title, url in zip(titles, urls):
         title = hp.unescape(title)
         print(title, url)
+        if '.gif' in url.split('/')[-1]:
+            title += ' (GIF)'
         li = xbmcgui.ListItem(title)
         li.setInfo(type="video", infoLabels={})
         xbmcplugin.addDirectoryItem(handle=g_AddonHandle,

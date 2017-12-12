@@ -1,0 +1,11 @@
+Prehravania animovanych gifov v GIFniku vyzaduje
+upravu/vytvorenie suboru ```advancedsetting.xml```
+(.kodi/userdata/advancedsettings.xml) a nasledny
+restart Kodi.
+
+```
+<advancedsettings>
+<videoextensions>
+<add>.gif</add>
+</videoextensions>
+```
