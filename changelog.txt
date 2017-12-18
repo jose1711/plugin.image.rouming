@@ -1,3 +1,6 @@
+[B]1.2:[/B]
+* Upravou zdrojoveho kodu je mozne zapnut Maso
+
 [B]1.1:[/B]
 * Pridanie zobrazovania .gif suborov v GIFniku
   (vyzaduje upravu advancedsettings.xml)

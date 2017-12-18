@@ -15,11 +15,20 @@ g_AddonHandle = int(sys.argv[1])
 g_AddonPath = xbmcaddon.Addon().getAddonInfo('path')
 g_AddonName = xbmcaddon.Addon().getAddonInfo('name')
 g_Args_URL = sys.argv[0]
+# by changing MASO_ENABLED to 1 you express your consent with
+# terms specified at www.roumenovomaso.cz
+# zmenou premennej MASO_ENABLED na hodnotu 1 vyjadrujete suhlas
+# s podmienkami popisanymi na www.roumenovomaso.cz
+MASO_ENABLED = 0
 
 
-def url2img_url(url):
+def url2img_url(url, site='roumen'):
+    if site in 'roumen':
+        base = 'http://www.rouming.cz'
+    else:
+        base = 'http://www.roumenovomaso.cz/'
     image_url = re.search(r'.*?file=(.*)', url).group(1)
-    return 'http://www.rouming.cz/upload/%s' % image_url
+    return '%s/upload/%s' % (base, image_url)
 
 
 def add_dir(name, url):
@@ -39,6 +48,7 @@ def toggle(path):
 
 # main()
 base_url = 'http://www.rouming.cz'
+maso_url = 'http://www.roumenovomaso.cz/?agree=on'
 hp = HTMLParser()
 intervals = ('today', 'week', 'month')
 if len(sys.argv) > 2:
@@ -50,6 +60,8 @@ print('Current mode: %s' % mode)
 
 if not mode:
     add_dir('[COLOR red]GIFník[/COLOR]', '%s?%s' % (g_Args_URL, 'gifs1'))
+    if MASO_ENABLED:
+        add_dir('[COLOR red]MASO[/COLOR]', '%s?%s' % (g_Args_URL, 'maso'))
     add_dir('[COLOR yellow]Best of today[/COLOR]', '%s?%s' % (g_Args_URL, 'today'))
     add_dir('[COLOR yellow]Best of week[/COLOR]', '%s?%s' % (g_Args_URL, 'week'))
     add_dir('[COLOR yellow]Best of month[/COLOR]', '%s?%s' % (g_Args_URL, 'month'))
@@ -119,9 +131,24 @@ elif 'gifs' in mode:
                                     listitem=li,
                                     isFolder=True)
     xbmcplugin.endOfDirectory(g_AddonHandle)
+elif 'maso' in mode:
+    data = util.parse_html(maso_url)
+    for img in data.select('.masoList')[0].findAll('td', attrs={'align': None}):
+        print(img)
+        if not img.a:
+            continue
+        print(img)
+        li = xbmcgui.ListItem(img.a.text)
+        li.setInfo(type="image", infoLabels={})
+        xbmcplugin.addDirectoryItem(handle=g_AddonHandle,
+                                    url=url2img_url(img.a['href'],
+                                                    site='maso'),
+                                    listitem=li,
+                                    isFolder=False)
+    xbmcplugin.endOfDirectory(g_AddonHandle)
 else:
     data = util.parse_html(base_url)
-    for img in data.select_one('.roumingList').select('td[width]'):
+    for img in data.select('.roumingList')[0].select('td[width]'):
         print(img)
         li = xbmcgui.ListItem(img.a.text)
         li.setInfo(type="image", infoLabels={})
