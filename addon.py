@@ -24,9 +24,9 @@ MASO_ENABLED = 0
 
 def url2img_url(url, site='roumen'):
     if site in 'roumen':
-        base = 'http://www.rouming.cz'
+        base = 'https://www.rouming.cz'
     else:
-        base = 'http://www.roumenovomaso.cz/'
+        base = 'https://www.roumenovomaso.cz/'
     image_url = re.search(r'.*?file=(.*)', url).group(1)
     return '%s/upload/%s' % (base, image_url)
 
@@ -47,8 +47,8 @@ def toggle(path):
 
 
 # main()
-base_url = 'http://www.rouming.cz'
-maso_url = 'http://www.roumenovomaso.cz/?agree=on'
+base_url = 'https://www.rouming.cz'
+maso_url = 'https://www.roumenovomaso.cz/?agree=on'
 hp = HTMLParser()
 intervals = ('today', 'week', 'month')
 if len(sys.argv) > 2:
@@ -80,11 +80,11 @@ if mode in intervals:
             path = 'archived'
         else:
             path = 'upload'
-        url = 'http://www.rouming.cz/%s/%s' % (path, jpg)
+        url = 'https://www.rouming.cz/%s/%s' % (path, jpg)
         if len(util.request(url)) < 5000:
             path = toggle(path)
         xbmcplugin.addDirectoryItem(handle=g_AddonHandle,
-                                    url='http://www.rouming.cz/%s/%s' % (path,
+                                    url='https://www.rouming.cz/%s/%s' % (path,
                                                                          jpg),
                                     listitem=li,
                                     isFolder=False)
