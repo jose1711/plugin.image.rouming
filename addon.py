@@ -2,14 +2,14 @@
 # plugin for viewing pics on rouming.cz on kodi. browsing archive
 # is currently not supported
 
+import bs4
 import re
+import requests
 import sys
 import xbmc
-import xbmcgui
 import xbmcaddon
+import xbmcgui
 import xbmcplugin
-import util
-from HTMLParser import HTMLParser
 
 g_AddonHandle = int(sys.argv[1])
 g_AddonPath = xbmcaddon.Addon().getAddonInfo('path')
@@ -49,7 +49,6 @@ def toggle(path):
 # main()
 base_url = 'https://www.rouming.cz'
 maso_url = 'https://www.roumenovomaso.cz/?agree=on'
-hp = HTMLParser()
 intervals = ('today', 'week', 'month')
 if len(sys.argv) > 2:
     mode = sys.argv[2][1:]
@@ -67,12 +66,9 @@ if not mode:
     add_dir('[COLOR yellow]Best of month[/COLOR]', '%s?%s' % (g_Args_URL, 'month'))
 
 if mode in intervals:
-    data = util.post(base_url, {'interval': intervals.index(mode)+1})
-    data = util.substr(data, 'name="interval"', 'table')
-    jpgs = re.findall(r'\?file=([^"]+)"', data)
-    titles = re.findall(r' title="([^"]+)"', data)
-    for title, jpg in zip(titles, jpgs):
-        title = title.replace('&nbsp;', ' ')
+    soup = bs4.BeautifulSoup(requests.post(f'{base_url}/roumingListTop.php', {'interval': intervals.index(mode)+1}).text, features="html.parser")
+    for title, jpg in [(x.text, x['href']) for x in soup.select('td > a') if 'roumingShow.php' in x['href']]:
+        jpg = re.match(r'roumingShow.php\?file=(.*)', jpg).group(1)
         print(title, jpg)
         li = xbmcgui.ListItem(title)
         li.setInfo(type="image", infoLabels={})
@@ -80,8 +76,9 @@ if mode in intervals:
             path = 'archived'
         else:
             path = 'upload'
+
         url = 'https://www.rouming.cz/%s/%s' % (path, jpg)
-        if len(util.request(url)) < 5000:
+        if requests.get(url).status_code != 200:
             path = toggle(path)
         xbmcplugin.addDirectoryItem(handle=g_AddonHandle,
                                     url='https://www.rouming.cz/%s/%s' % (path,
@@ -91,21 +88,17 @@ if mode in intervals:
     xbmcplugin.endOfDirectory(g_AddonHandle)
 elif 'gifs' in mode:
     page = int(mode.replace('gifs', ''))
-    data = util.post(base_url + '/roumingGIFList.php',
-                     {'page': page,
-                      'submited': 1})
-    print(page)
-    data = util.substr(data, 'tbody', '</body>')
+    soup = requests.post(f'{base_url}/roumingGIFList.php', {'page': page, 'submited': 1})
+    print(f'page: {page}')
     urls = re.findall(r'(?:<source src="([^"]+\.(?:webm|mp4))".*?</video>|img src=\'([^  \']+)\')',
-                      data,
+                      soup.text,
                       re.S)
     urls = [''.join(x) for x in urls]
     titles = re.findall(r'(?:<video .+?title="([^"]*)")|(?:alt=\'([^\']+)\')',
-                        data)
+                        soup.text)
     print(urls, titles)
     titles = [''.join(x) for x in titles]
     for title, url in zip(titles, urls):
-        title = hp.unescape(title)
         print(title, url)
         if '.gif' in url.split('/')[-1]:
             title += ' (GIF)'
@@ -132,8 +125,8 @@ elif 'gifs' in mode:
                                     isFolder=True)
     xbmcplugin.endOfDirectory(g_AddonHandle)
 elif 'maso' in mode:
-    data = util.parse_html(maso_url)
-    for img in data.select('.masoList')[0].findAll('td', attrs={'align': None}):
+    soup = bs4.BeautifulSoup(requests.get(maso_url).text, features="html.parser")
+    for img in soup.select('.masoList')[0].findAll('td', attrs={'align': None}):
         print(img)
         if not img.a:
             continue
@@ -147,9 +140,8 @@ elif 'maso' in mode:
                                     isFolder=False)
     xbmcplugin.endOfDirectory(g_AddonHandle)
 else:
-    data = util.parse_html(base_url)
-    for img in data.select('.roumingList')[0].select('td[width]'):
-        print(img)
+    data = bs4.BeautifulSoup(requests.get(base_url).text, features="html.parser")
+    for img in data.select('.roumingList .mw700 table')[0].select('td[width]'):
         li = xbmcgui.ListItem(img.a.text)
         li.setInfo(type="image", infoLabels={})
         xbmcplugin.addDirectoryItem(handle=g_AddonHandle,
