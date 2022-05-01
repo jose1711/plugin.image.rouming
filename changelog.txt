@@ -1,3 +1,6 @@
+[B]1.3.1:[/B]
+* Oprava rozbiteho parsovania
+
 [B]1.3:[/B]
 * Prechod na HTTPS
 

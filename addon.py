@@ -148,7 +148,7 @@ elif 'maso' in mode:
     xbmcplugin.endOfDirectory(g_AddonHandle)
 else:
     data = util.parse_html(base_url)
-    for img in data.select('.roumingList')[0].select('td[width]'):
+    for img in data.select('.roumingList .mw700 table')[0].select('td[width]'):
         print(img)
         li = xbmcgui.ListItem(img.a.text)
         li.setInfo(type="image", infoLabels={})
