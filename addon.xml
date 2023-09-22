@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="plugin.image.rouming" name="Rouming" version="1.4.0" provider-name="jose1711">
+<addon id="plugin.image.rouming" name="Rouming" version="1.4.1" provider-name="jose1711">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0"/>
 		<import addon="script.module.requests" version="2.22.0" />
@@ -15,9 +15,12 @@
 		<summary lang="sk">Obrázky a fotografie zo serveru Rouming.cz</summary>
 		<description lang="sk">Pozri, čo je nové na Roumenovi!</description>
 		<summary lang="cz">Obrázky a fotografie ze serveru Rouming.cz</summary>
-		<description lang="cz">Mrkni se, co je nové u Roumena!</description>
+		<description lang="cz">Mrkni se, co je nového u Roumena!</description>
 		<license>GNU GENERAL PUBLIC LICENSE. Version 2, June 1991</license>
 		<language/>
 		<email>jose1711@gmail.com</email>
+    <assets>
+      <icon>icon.png</icon>
+    </assets>
 	</extension>
 </addon>
