@@ -6,6 +6,7 @@ import bs4
 import re
 import requests
 import sys
+import urllib.parse
 import xbmc
 import xbmcaddon
 import xbmcgui
@@ -46,6 +47,54 @@ def toggle(path):
         return 'archived'
 
 
+def get_object_id(key, kind='file'):
+    if kind == 'gif':
+        resp = requests.get('%s/roumingGIF.php' % base_url, params={'gif': key})
+    else:
+        resp = requests.get('%s/roumingShow.php' % base_url, params={'file': key})
+    m = re.search(r'roumingComments\.php\?object=(\d+)', resp.text)
+    return m.group(1) if m else None
+
+
+def fetch_comments(key, kind='file'):
+    object_id = get_object_id(key, kind)
+    if not object_id:
+        return None
+    soup = bs4.BeautifulSoup(
+        requests.get('%s/roumingComments.php' % base_url, params={'object': object_id}).text,
+        features="html.parser")
+    comments = []
+    for header in soup.select('tr.roumingForum'):
+        title_tds = header.select('td.roumingForumTitle')
+        info_td = title_tds[1] if len(title_tds) > 1 else title_tds[0]
+        font_tag = info_td.find('font')
+        date = font_tag.get_text(strip=True).strip('()') if font_tag else ''
+        a_tag = info_td.find('a')
+        if a_tag:
+            a_tag.extract()
+        if font_tag:
+            font_tag.extract()
+        nick = info_td.get_text(strip=True).strip('()') or 'Anonym'
+        message_row = header.find_next_sibling('tr')
+        message_td = message_row.find('td', class_='roumingForumMessage') if message_row else None
+        message = message_td.get_text(strip=True) if message_td else ''
+        comments.append('%s (%s)\n%s' % (nick, date, message))
+    return comments
+
+
+def show_comments(key, kind='file'):
+    comments = fetch_comments(key, kind)
+    if not comments:
+        xbmcgui.Dialog().notification(g_AddonName, 'Žiadne komentáre', xbmcgui.NOTIFICATION_INFO)
+        return
+    xbmcgui.Dialog().textviewer('Komentáre: %s' % key, '\n\n'.join(comments))
+
+
+def add_comments_context(li, key, kind='file'):
+    url = '%s?%s' % (g_Args_URL, 'comments' + kind[0] + urllib.parse.quote(key, safe=''))
+    li.addContextMenuItems([('Komentáre', 'RunPlugin(%s)' % url)])
+
+
 # main()
 base_url = 'https://www.rouming.cz'
 maso_url = 'https://www.roumenovomaso.cz/?agree=on'
@@ -72,6 +121,7 @@ if mode in intervals:
         print(title, jpg)
         li = xbmcgui.ListItem(title)
         li.setInfo(type="image", infoLabels={})
+        add_comments_context(li, jpg)
         if mode == 'month':
             path = 'archived'
         else:
@@ -98,12 +148,14 @@ elif 'gifs' in mode:
                         soup.text)
     print(urls, titles)
     titles = [''.join(x) for x in titles]
-    for title, url in zip(titles, urls):
+    gif_ids = re.findall(r'<a name="(\d+)"></a>', soup.text)
+    for title, url, gif_id in zip(titles, urls, gif_ids):
         print(title, url)
         if '.gif' in url.split('/')[-1]:
             title += ' (GIF)'
         li = xbmcgui.ListItem(title)
         li.setInfo(type="video", infoLabels={})
+        add_comments_context(li, gif_id, kind='gif')
         xbmcplugin.addDirectoryItem(handle=g_AddonHandle,
                                     url=url,
                                     listitem=li,
@@ -139,11 +191,16 @@ elif 'maso' in mode:
                                     listitem=li,
                                     isFolder=False)
     xbmcplugin.endOfDirectory(g_AddonHandle)
+elif mode.startswith('comments'):
+    rest = mode[len('comments'):]
+    kind = 'gif' if rest[0] == 'g' else 'file'
+    show_comments(urllib.parse.unquote(rest[1:]), kind=kind)
 else:
     data = bs4.BeautifulSoup(requests.get(base_url).text, features="html.parser")
     for img in data.select('.roumingList .mw700 table')[0].select('td[width]'):
         li = xbmcgui.ListItem(img.a.text)
         li.setInfo(type="image", infoLabels={})
+        add_comments_context(li, re.search(r'.*?file=(.*)', img.a['href']).group(1))
         xbmcplugin.addDirectoryItem(handle=g_AddonHandle,
                                     url=url2img_url(img.a['href']), listitem=li,
                                     isFolder=False)

@@ -1,3 +1,7 @@
+[B]1.5.0:[/B]
+* Pridane zobrazovanie pouzivatelskych komentarov k obrazkom aj GIFom
+  (dostupne cez kontextove menu "Komentare")
+
 [B]1.4.1:[/B]
 * Opravene nezobrazenie ikony
 
