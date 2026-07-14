@@ -3,6 +3,7 @@
 # is currently not supported
 
 import bs4
+import html
 import re
 import requests
 import sys
@@ -147,7 +148,7 @@ elif 'gifs' in mode:
     titles = re.findall(r'(?:<video .+?title="([^"]*)")|(?:alt=\'([^\']+)\')',
                         soup.text)
     print(urls, titles)
-    titles = [''.join(x) for x in titles]
+    titles = [html.unescape(''.join(x)) for x in titles]
     gif_ids = re.findall(r'<a name="(\d+)"></a>', soup.text)
     for title, url, gif_id in zip(titles, urls, gif_ids):
         print(title, url)
@@ -160,7 +161,7 @@ elif 'gifs' in mode:
                                     url=url,
                                     listitem=li,
                                     isFolder=False)
-    li = xbmcgui.ListItem('>> Next page')
+    li = xbmcgui.ListItem('[COLOR yellow]>> Next page[/COLOR]')
     xbmcplugin.addDirectoryItem(handle=g_AddonHandle,
                                 url='%s?%s%s' % (g_Args_URL,
                                                  'gifs',
@@ -168,7 +169,7 @@ elif 'gifs' in mode:
                                 listitem=li,
                                 isFolder=True)
     if page > 1:
-        li = xbmcgui.ListItem('<< Previous page')
+        li = xbmcgui.ListItem('[COLOR yellow]<< Previous page[/COLOR]')
         xbmcplugin.addDirectoryItem(handle=g_AddonHandle,
                                     url='%s?%s%s' % (g_Args_URL,
                                                      'gifs',

@@ -1,3 +1,7 @@
+[B]1.5.1:[/B]
+* Oprava zobrazovania nazvov s apostrofom v GIFniku (dekodovanie HTML entit)
+* Zjednotenie vzhladu tlacidiel Next/Previous page s ostatnymi polozkami
+
 [B]1.5.0:[/B]
 * Pridane zobrazovanie pouzivatelskych komentarov k obrazkom aj GIFom
   (dostupne cez kontextove menu "Komentare")
